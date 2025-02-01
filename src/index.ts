@@ -1,17 +1,37 @@
-import express, { Request, Response } from "express";
+import express from "express";
 import dotenv from "dotenv";
+import authRouter from "./routes/authRoutes";
+import mongoose from "mongoose";
+import errorHandler from "./middleware/errorHandler";
 
-const env = process.env.NODE_ENV || "local";
+dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 5000;
 
+// Connect to MongoDB
+mongoose
+  .connect(process.env.MONGO_URI || "")
+  .then((connect) => {
+    console.log("Successfully connected to Database:", connect.connection.name);
+  })
+  .catch((error) => {
+    console.log(error);
+    process.exit(1);
+  });
+
 app.use(express.json());
 
-app.get("/", (req: Request, res: Response) => {
-  res.send("Hello, TypeScript with Node.js!");
+// Health check route
+app.get("/health", (req, res) => {
+  res.send("OK");
 });
 
-app.listen(PORT, () => {
-  console.log(`Server is running on http://localhost:${PORT}`);
-});
+// Routes
+app.use("/auth", authRouter);
+app.use("*", errorHandler);
+
+// Start server
+app.listen(PORT, () =>
+  console.log(`Server running at http://localhost:${PORT}`),
+);
