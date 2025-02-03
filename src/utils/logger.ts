@@ -9,7 +9,7 @@ const timestampFormat = "YYYY-MM-DD HH:mm:ss";
 
 // Custom log formats
 const consoleLogFormat = printf(({ level, message, timestamp }) => {
-  return `[${level}] [${message}] [${timestamp}]`;
+  return `[${level}] [${message}]`;
 });
 
 const fileLogFormat = combine(
