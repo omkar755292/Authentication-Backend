@@ -3,6 +3,7 @@ import dotenv from "dotenv";
 import authRouter from "./routes/authRoutes";
 import mongoose from "mongoose";
 import errorHandler from "./middleware/errorHandler";
+import { loggerMiddleware } from "./utils/logger";
 
 dotenv.config();
 
@@ -20,6 +21,8 @@ mongoose
     process.exit(1);
   });
 
+// Middleware
+app.use(loggerMiddleware);
 app.use(express.json());
 
 // Health check route

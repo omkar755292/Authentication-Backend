@@ -2,21 +2,27 @@ import { Request, Response, NextFunction } from "express";
 
 // Custom error interface
 interface AppError extends Error {
-    statusCode?: number;
+  statusCode?: number;
 }
 
 // Global error handling middleware
-const errorHandler = (err: AppError, req: Request, res: Response, next: NextFunction) => {
-    console.error("Error:", err.message);
+const errorHandler = (
+  err: AppError,
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  console.error("Error:", err.message);
 
-    const statusCode = err.statusCode || 500;
-    const message = err.message || "Internal Server Error";
+  const statusCode = err.statusCode || 500;
+  const message = err.message || "Internal Server Error";
 
-    res.status(statusCode).json({
-        success: false,
-        message,
-        stack: process.env.NODE_ENV === "development" ? err.stack : undefined, // Hide stack in production
-    });
+  res.status(statusCode).json({
+    success: false,
+    message,
+    stack: process.env.NODE_ENV === "development" ? err.stack : undefined, // Hide stack in production
+  });
+  next();
 };
 
 export default errorHandler;
