@@ -4,6 +4,8 @@ import { checkSchema, matchedData } from "express-validator";
 import { validationResult } from "express-validator";
 import bcrypt from "bcrypt";
 import User from "../models/user";
+import jwt from "jsonwebtoken";
+
 const authRouter = express.Router();
 
 // Login (user)
@@ -46,13 +48,50 @@ authRouter.post(
         return;
       }
 
-      // Create session or token here (you might want to use JWT or session middleware)
+      const accessTokenExpiry = Date.now() + 24 * 60 * 60 * 1000; // 1 day in milliseconds
+      const refreshTokenExpiry = Date.now() + 5 * 24 * 60 * 60 * 1000; // 5 days in milliseconds
+
+      // Generate JWT Tokens
+      const accessToken = jwt.sign(
+        { Email: user.Email, Uid: user._id },
+        process.env.ACCESS_TOKEN_SECRET!,
+        { expiresIn: "1d" }
+      );
+
+      const refreshToken = jwt.sign(
+        { Email: user.Email, Uid: user._id },
+        process.env.REFRESH_TOKEN_SECRET!,
+        { expiresIn: "5d" }
+      );
+
+      // Clear old cookies
+      res.clearCookie("access_token", { httpOnly: true, secure: true, sameSite: "strict" });
+      res.clearCookie("refresh_token", { httpOnly: true, secure: true, sameSite: "strict" });
+
+      // Set new cookies
+      res.cookie("access_token", accessToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "strict",
+        maxAge: 24 * 60 * 60 * 1000, // 1 day
+      });
+
+      res.cookie("refresh_token", refreshToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "strict",
+        maxAge: 5 * 24 * 60 * 60 * 1000, // 5 days
+      });
+
       // For now, we'll just return the user data (excluding sensitive information)
       const userData = {
-        id: user._id,
-        Email: user.Email,
+        _id: user._id,
         FirstName: user.FirstName,
+        MiddleName: user.MiddleName,
         LastName: user.LastName,
+        Gender: user.Gender,
+        DOB: user.DOB,
+        Email: user.Email,
         PhoneNo: user.PhoneNo,
       };
 
