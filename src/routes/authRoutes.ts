@@ -1,10 +1,10 @@
 import express, { Request, Response } from "express";
-import requiredLogin from "../middleware/requiredLogin";
 import { checkSchema, matchedData } from "express-validator";
 import { validationResult } from "express-validator";
 import bcrypt from "bcrypt";
 import User from "../models/user";
-import jwt from "jsonwebtoken";
+import requiredLogin from "../middleware/requiredLogin";
+import { clearCookie, generateAccessToken, generateRefreshToken, setAccessTokenCookie, setRefreshTokenCookie, verifyRefreshToken } from "../utils/verifyJwt";
 
 const authRouter = express.Router();
 
@@ -48,40 +48,17 @@ authRouter.post(
         return;
       }
 
-      const accessTokenExpiry = Date.now() + 24 * 60 * 60 * 1000; // 1 day in milliseconds
-      const refreshTokenExpiry = Date.now() + 5 * 24 * 60 * 60 * 1000; // 5 days in milliseconds
-
       // Generate JWT Tokens
-      const accessToken = jwt.sign(
-        { Email: user.Email, Uid: user._id },
-        process.env.ACCESS_TOKEN_SECRET!,
-        { expiresIn: "1d" }
-      );
-
-      const refreshToken = jwt.sign(
-        { Email: user.Email, Uid: user._id },
-        process.env.REFRESH_TOKEN_SECRET!,
-        { expiresIn: "5d" }
-      );
+      const accessToken = generateAccessToken(user);
+      const refreshToken = generateRefreshToken(user);
 
       // Clear old cookies
-      res.clearCookie("access_token", { httpOnly: true, secure: true, sameSite: "strict" });
-      res.clearCookie("refresh_token", { httpOnly: true, secure: true, sameSite: "strict" });
+      clearCookie(res, "access_token");
+      clearCookie(res, "refresh_token");
 
       // Set new cookies
-      res.cookie("access_token", accessToken, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: "strict",
-        maxAge: 24 * 60 * 60 * 1000, // 1 day
-      });
-
-      res.cookie("refresh_token", refreshToken, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: "strict",
-        maxAge: 5 * 24 * 60 * 60 * 1000, // 5 days
-      });
+      setAccessTokenCookie(res, accessToken);
+      setRefreshTokenCookie(res, refreshToken);
 
       // For now, we'll just return the user data (excluding sensitive information)
       const userData = {
@@ -233,7 +210,33 @@ authRouter.post(
 
 // refresh session
 authRouter.post("/refresh-session", async (req: Request, res: Response) => {
-  res.send("Refresh Session Route");
+  try {
+    // Get the refresh token from the cookies
+    const refreshToken = req.cookies.refresh_token;
+
+    if (!refreshToken) {
+      res.status(403).json({ error: "Refresh token required" });
+      return;
+    }
+
+    // Verify the refresh token
+    const user = await verifyRefreshToken(refreshToken);
+    if (!user) {
+      res.status(403).json({ error: "User not found" });
+      return;
+    }
+
+    // Generate a new access token
+    const accessToken = generateAccessToken(user);
+
+    // Set the new access token as an HTTP-only cookie
+    setAccessTokenCookie(res, accessToken);
+
+    res.status(200).json({ message: "Access token refreshed" });
+  } catch (error) {
+    console.error("Refresh Token Error:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
 });
 
 export default authRouter;

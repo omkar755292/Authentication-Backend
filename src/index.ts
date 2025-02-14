@@ -2,6 +2,7 @@ import express from "express";
 import dotenv from "dotenv";
 import mongoose from "mongoose";
 import cors from "cors";
+import cookieParser from "cookie-parser";
 import authRouter from "./routes/authRoutes";
 import errorHandler from "./middleware/errorHandler";
 import { logger, loggerMiddleware } from "./utils/logger";
@@ -73,6 +74,7 @@ app.use(
 // Middleware
 app.use(loggerMiddleware);
 app.use(express.json());
+app.use(cookieParser());
 
 // Health check
 app.get("/health", (req, res) => {
