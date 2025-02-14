@@ -4,7 +4,14 @@ import { validationResult } from "express-validator";
 import bcrypt from "bcrypt";
 import User from "../models/user";
 import requiredLogin from "../middleware/requiredLogin";
-import { clearCookie, generateAccessToken, generateRefreshToken, setAccessTokenCookie, setRefreshTokenCookie, verifyRefreshToken } from "../utils/verifyJwt";
+import {
+  clearCookie,
+  generateAccessToken,
+  generateRefreshToken,
+  setAccessTokenCookie,
+  setRefreshTokenCookie,
+  verifyRefreshToken,
+} from "../utils/verifyJwt";
 
 const authRouter = express.Router();
 
@@ -190,9 +197,13 @@ authRouter.get("/verify-phone", async (req: Request, res: Response) => {
 });
 
 // Forgot Password
-authRouter.post("/forgot-password", async (req: Request, res: Response) => {
-  res.send("Forgot Password Route");
-});
+authRouter.post(
+  "/forgot-password",
+  requiredLogin,
+  async (req: Request, res: Response) => {
+    res.send("Forgot Password Route");
+  },
+);
 
 // Reset Password
 authRouter.post("/reset-password", async (req: Request, res: Response) => {

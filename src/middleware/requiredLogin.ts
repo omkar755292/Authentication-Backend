@@ -19,12 +19,11 @@ declare global {
 const requiredLogin = async (
   req: Request,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ) => {
   try {
     // Get the access token from cookies
     const accessToken: string = req.cookies.access_token;
-    console.log(accessToken);
 
     if (!accessToken) {
       res.status(401).json({ error: "Access token required" });
