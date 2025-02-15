@@ -5,7 +5,7 @@ import {
   verifyRefreshToken,
   generateAccessToken,
   setAccessTokenCookie,
-} from "../utils/verifyJwt";
+} from "../utils/jwt";
 import { IUser } from "../models/user";
 
 declare global {

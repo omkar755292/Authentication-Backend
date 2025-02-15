@@ -11,7 +11,7 @@ import {
   setAccessTokenCookie,
   setRefreshTokenCookie,
   verifyRefreshToken,
-} from "../utils/verifyJwt";
+} from "../utils/jwt";
 
 const authRouter = express.Router();
 
