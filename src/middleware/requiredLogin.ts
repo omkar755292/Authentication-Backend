@@ -6,7 +6,7 @@ import {
   generateAccessToken,
   setAccessTokenCookie,
 } from "../utils/jwt";
-import { IUser } from "../models/user";
+import { IUser } from "../types/global.types";
 
 declare global {
   namespace Express {

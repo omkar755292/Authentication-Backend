@@ -1,6 +1,7 @@
 import jwt, { JwtPayload } from "jsonwebtoken";
 import { Response } from "express";
-import User, { IUser } from "../models/user";
+import User from "../models/user";
+import { IUser } from "../types/global.types";
 
 interface TokenPayload extends JwtPayload {
   Email: string;

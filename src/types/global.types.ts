@@ -12,7 +12,7 @@ interface INotificationPreference {
   WhatsApp: boolean;
 }
 
-interface IUser extends Document {
+export interface IUser extends Document {
   _id: string;
   FirstName: string;
   MiddleName?: string;

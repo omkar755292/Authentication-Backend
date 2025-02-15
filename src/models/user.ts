@@ -1,35 +1,5 @@
-import mongoose, { Schema, Document } from "mongoose";
-
-export interface ISubscriptionPlan {
-  Name: string;
-  Validity: Date;
-}
-
-export interface INotificationPreference {
-  Email: boolean;
-  SMS: boolean;
-  InApp: boolean;
-  WhatsApp: boolean;
-}
-
-export interface IUser extends Document {
-  FirstName: string;
-  MiddleName?: string;
-  LastName: string;
-  Gender: "Male" | "Female" | "Other";
-  DOB?: Date;
-  Email: string;
-  PhoneNo: string;
-  Password: string;
-  RealPassword?: string;
-  SubscriptionPlan?: ISubscriptionPlan;
-  DefaultCurrency: string;
-  NotificationPreference: INotificationPreference;
-  ResetPasswordToken?: string;
-  SwapPassHash?: string;
-  createdAt: Date;
-  updatedAt: Date;
-}
+import mongoose, { Schema } from "mongoose";
+import { IUser } from "../types/global.types";
 
 const UserSchema: Schema = new Schema<IUser>(
   {
