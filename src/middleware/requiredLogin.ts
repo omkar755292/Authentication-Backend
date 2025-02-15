@@ -1,17 +1,12 @@
 import { Request, Response, NextFunction } from "express";
 import { logger } from "../utils/logger";
-import {
-  verifyAccessToken,
-  verifyRefreshToken,
-  generateAccessToken,
-  setAccessTokenCookie,
-} from "../utils/jwt";
-import { IUser } from "../types/global.types";
+import JWTService from "../services/jwtService";
+import { DecodedUser } from "../types/global.types";
 
 declare global {
   namespace Express {
     interface Request {
-      user: IUser;
+      user?: DecodedUser;
     }
   }
 }
@@ -23,47 +18,44 @@ const requiredLogin = async (
 ) => {
   try {
     // Get the access token from cookies
-    const accessToken: string = req.cookies.access_token;
+    let accessToken: string = req.cookies.access_token;
 
     if (!accessToken) {
-      res.status(401).json({ error: "Access token required" });
+      // If access token is not found, check for refresh token
+      const refreshToken = req.cookies.refresh_token;
+
+      if (!refreshToken) {
+        res.status(401).json({ error: "Access token and refresh token required" });
+        return;
+      }
+
+      // Verify refresh token and get user
+      const refreshUser = await JWTService.verifyRefreshToken(refreshToken);
+      if (!refreshUser) {
+        JWTService.clearCookie(res, "refresh_token");
+        res.status(401).json({ error: "Invalid refresh token" });
+        return;
+      }
+
+      // Generate new access token
+      accessToken = JWTService.generateAccessToken(refreshUser);
+      JWTService.sendAccessTokenCookie(res, accessToken);
+    }
+
+    // Verify access token
+    const decodedUser = await JWTService.verifyAccessToken(accessToken);
+    if (!decodedUser) {
+      JWTService.clearCookie(res, "access_token");
+      res.status(401).json({ error: "Invalid access token" });
       return;
     }
 
-    // Verify access token and get user
-    const user = await verifyAccessToken(accessToken);
-
-    if (user) {
-      req.user = user;
-      next();
-      return;
-    }
-
-    // If access token is invalid, try refresh token
-    const refreshToken: string = req.cookies.refresh_token;
-    if (!refreshToken) {
-      res.status(401).json({ error: "Refresh token required" });
-      return;
-    }
-
-    // Verify refresh token and get user
-    const refreshUser = await verifyRefreshToken(refreshToken);
-    if (!refreshUser) {
-      res.status(401).json({ error: "Invalid refresh token" });
-      return;
-    }
-
-    // Generate new access token
-    const newAccessToken: string = generateAccessToken(refreshUser);
-    setAccessTokenCookie(res, newAccessToken);
-
-    // Attach user to request and continue
-    req.user = refreshUser;
+    // Attach the user to the request
+    req.user = decodedUser;
     next();
   } catch (error: any) {
     logger.error("Authentication middleware error:", error);
     res.status(500).json({ error: error.message });
-    return;
   }
 };
 

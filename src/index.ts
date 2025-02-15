@@ -37,7 +37,7 @@ setInterval(fetchAllowedOrigins, 10 * 60 * 1000);
 mongoose
   .connect(process.env.MONGO_URI || "")
   .then(async (connect) => {
-    logger.info("Successfully connected to Database:", connect.connection.name);
+    console.log("Database connected:", connect.connection.name);
     await fetchAllowedOrigins();
   })
   .catch((error) => {
@@ -87,5 +87,5 @@ app.use("*", errorHandler);
 
 // Start server
 app.listen(PORT, () =>
-  logger.info(`Server running at http://localhost:${PORT}`),
+  console.log(`Server running on port ${PORT}`),
 );

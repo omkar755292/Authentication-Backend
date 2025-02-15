@@ -5,6 +5,11 @@ interface ISubscriptionPlan {
   Validity: Date;
 }
 
+export interface DecodedUser extends Document {
+  Uid: string;
+  Email: string;
+}
+
 interface INotificationPreference {
   Email: boolean;
   SMS: boolean;
