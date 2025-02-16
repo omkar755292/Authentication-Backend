@@ -268,7 +268,7 @@ authRouter.post("/logout", async (req: Request, res: Response) => {
 // Get User
 authRouter.get("/user", requiredLogin, async (req: Request, res: Response) => {
   try {
-    res.json(req.user);
+    res.status(200).json(req.user);
   } catch (error) {
     logger.error("Get user error:", error);
     res.status(500).json({ error: "Internal server error" });
