@@ -190,17 +190,14 @@ authRouter.get("/verify-phone", async (req: Request, res: Response) => {
 });
 
 // Forgot Password
-authRouter.post(
-  "/forgot-password",
-  async (req: Request, res: Response) => {
-    try {
-      res.send("Forgot Password Route");
-    } catch (error) {
-      logger.error("Forgot Password error:", error);
-      res.status(500).json({ error: "Internal server error" });
-    }
-  },
-);
+authRouter.post("/forgot-password", async (req: Request, res: Response) => {
+  try {
+    res.send("Forgot Password Route");
+  } catch (error) {
+    logger.error("Forgot Password error:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
 
 // Reset Password
 authRouter.post("/reset-password", async (req: Request, res: Response) => {
@@ -213,17 +210,14 @@ authRouter.post("/reset-password", async (req: Request, res: Response) => {
 });
 
 // Change Password
-authRouter.post(
-  "/change-password",
-  async (req: Request, res: Response) => {
-    try {
-      res.send("Change Password Route");
-    } catch (error) {
-      logger.error("Change Password error:", error);
-      res.status(500).json({ error: "Internal server error" });
-    }
-  },
-);
+authRouter.post("/change-password", async (req: Request, res: Response) => {
+  try {
+    res.send("Change Password Route");
+  } catch (error) {
+    logger.error("Change Password error:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
 
 // Refresh Token
 authRouter.post("/refresh-token", async (req: Request, res: Response) => {
@@ -265,14 +259,27 @@ authRouter.post("/logout", async (req: Request, res: Response) => {
   }
 });
 
-// Get User
-authRouter.get("/user", requiredLogin, async (req: Request, res: Response) => {
-  try {
-    res.status(200).json(req.user);
-  } catch (error) {
-    logger.error("Get user error:", error);
-    res.status(500).json({ error: "Internal server error" });
-  }
-});
+// Verify user using cookies
+authRouter.get(
+  "/verify-user",
+  requiredLogin,
+  async (req: Request, res: Response): Promise<void> => {
+    try {
+      const user = req.user;
+      if (!user) {
+        res.status(401).json({ error: "Unauthorized" });
+        return;
+      }
+
+      res.status(200).json({
+        message: "User verified",
+        user: user,
+      });
+    } catch (error) {
+      logger.error("Verify user error:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  },
+);
 
 export default authRouter;

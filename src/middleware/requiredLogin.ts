@@ -25,7 +25,9 @@ const requiredLogin = async (
       const refreshToken = req.cookies.refresh_token;
 
       if (!refreshToken) {
-        res.status(401).json({ error: "Access token and refresh token required" });
+        res
+          .status(401)
+          .json({ error: "Access token and refresh token required" });
         return;
       }
 
