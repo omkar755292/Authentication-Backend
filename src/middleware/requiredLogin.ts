@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from "express";
 import { logger } from "../utils/logger";
 import JWTService from "../services/jwtService";
 import { DecodedUser } from "../types/global.types";
+import User from "../models/user";
 
 declare global {
   namespace Express {
@@ -18,42 +19,40 @@ const requiredLogin = async (
 ) => {
   try {
     // Get the access token from cookies
-    let accessToken: string = req.cookies.access_token;
-
-    if (!accessToken) {
-      // If access token is not found, check for refresh token
-      const refreshToken = req.cookies.refresh_token;
-
-      if (!refreshToken) {
-        res
-          .status(401)
-          .json({ error: "Access token and refresh token required" });
-        return;
+    let accessToken =
+      req.cookies.access_token || req.headers.authorization?.split(" ")[1];
+    // Step 1: Verify Access Token (if available)
+    if (accessToken) {
+      const decodedUser = await JWTService.verifyAccessToken(accessToken);
+      if (decodedUser) {
+        req.user = decodedUser;
+        return next();
       }
-
-      // Verify refresh token and get user
-      const refreshUser = await JWTService.verifyRefreshToken(refreshToken);
-      if (!refreshUser) {
-        JWTService.clearCookie(res, "refresh_token");
-        res.status(401).json({ error: "Invalid refresh token" });
-        return;
-      }
-
-      // Generate new access token
-      accessToken = JWTService.generateAccessToken(refreshUser);
-      JWTService.sendAccessTokenCookie(res, accessToken);
     }
-
-    // Verify access token
-    const decodedUser = await JWTService.verifyAccessToken(accessToken);
-    if (!decodedUser) {
-      JWTService.clearCookie(res, "access_token");
-      res.status(401).json({ error: "Invalid access token" });
-      return;
+    // Step 2: If Access Token is missing/invalid, check Refresh Token
+    const refreshToken = req.cookies.refresh_token;
+    if (!refreshToken) {
+      return res
+        .status(401)
+        .json({ error: "Unauthorized: No valid tokens found" });
     }
-
-    // Attach the user to the request
-    req.user = decodedUser;
+    // Step 3: Verify Refresh Token & Get User
+    const refreshUser = await JWTService.verifyRefreshToken(refreshToken);
+    if (!refreshUser) {
+      JWTService.clearCookie(res, "refresh_token");
+      return res
+        .status(401)
+        .json({ error: "Unauthorized: Invalid refresh token" });
+    }
+    const user = await User.findById(refreshUser.Uid);
+    if (!user) {
+      JWTService.clearCookie(res, "refresh_token");
+      return res.status(401).json({ error: "Unauthorized: User not found" });
+    }
+    // Step 4: Generate and Send New Access Token
+    accessToken = JWTService.generateAccessToken(user);
+    JWTService.sendAccessTokenCookie(res, accessToken);
+    req.user = refreshUser;
     next();
   } catch (error: any) {
     logger.error("Authentication middleware error:", error);

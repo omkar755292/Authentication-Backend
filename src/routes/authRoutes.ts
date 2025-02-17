@@ -102,6 +102,18 @@ authRouter.post(
       isEmail: { errorMessage: "Invalid Email" },
       normalizeEmail: true,
     },
+    PhoneNo: {
+      isNumeric: { errorMessage: "Phone number must be a number" },
+      notEmpty: { errorMessage: "Phone number is required" },
+    },
+    Gender: {
+      isString: { errorMessage: "Gender must be a string" },
+      optional: true,
+    },
+    DOB: {
+      isISO8601: { errorMessage: "DOB must be a valid date" },
+      optional: true,
+    },
     Password: {
       isString: { errorMessage: "Password must be a string" },
       notEmpty: { errorMessage: "Password is required" },
@@ -132,6 +144,14 @@ authRouter.post(
         ...attr,
         Password: hashedPassword,
       });
+
+      // Generate JWT Tokens
+      const accessToken = JWTService.generateAccessToken(user);
+      const refreshToken = JWTService.generateRefreshToken(user);
+
+      // Set cookies
+      JWTService.sendAccessTokenCookie(res, accessToken);
+      JWTService.sendRefreshTokenCookie(res, refreshToken);
 
       res.status(201).json({
         message: "Registration successful",
@@ -227,14 +247,17 @@ authRouter.post("/refresh-token", async (req: Request, res: Response) => {
       res.status(403).json({ error: "Refresh token required" });
       return;
     }
-
     // Verify and decode the refresh token
-    const user = await JWTService.verifyRefreshToken(refreshToken);
-    if (!user) {
+    const decodedUser = await JWTService.verifyRefreshToken(refreshToken);
+    if (!decodedUser) {
       res.status(403).json({ error: "Invalid refresh token" });
       return;
     }
-
+    const user = await User.findById(decodedUser.Uid);
+    if (!user) {
+      res.status(403).json({ error: "User not found" });
+      return;
+    }
     // Generate new access token
     const accessToken = JWTService.generateAccessToken(user);
     JWTService.clearCookie(res, "access_token");
@@ -262,19 +285,21 @@ authRouter.post("/logout", async (req: Request, res: Response) => {
 // Verify user using cookies
 authRouter.get(
   "/verify-user",
-  requiredLogin,
   async (req: Request, res: Response): Promise<void> => {
     try {
-      const user = req.user;
-      if (!user) {
-        res.status(401).json({ error: "Unauthorized" });
+      const cookies = req.cookies;
+      if (!cookies?.access_token) {
+        res.status(401).json({ error: "Access token required" });
         return;
       }
 
-      res.status(200).json({
-        message: "User verified",
-        user: user,
-      });
+      const user = await JWTService.verifyAccessToken(cookies.access_token);
+      if (!user) {
+        res.status(401).json({ error: "Invalid access token" });
+        return;
+      }
+
+      res.status(200).json({ message: "User verified successfully", user });
     } catch (error) {
       logger.error("Verify user error:", error);
       res.status(500).json({ error: "Internal server error" });

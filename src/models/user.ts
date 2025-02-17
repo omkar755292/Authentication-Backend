@@ -24,7 +24,6 @@ const UserSchema: Schema = new Schema<IUser>(
     Gender: {
       type: String,
       enum: ["Male", "Female", "Other"],
-      required: true,
     },
     DOB: {
       type: Date,
@@ -37,7 +36,7 @@ const UserSchema: Schema = new Schema<IUser>(
       required: true,
     },
     PhoneNo: {
-      type: String,
+      type: Number,
       unique: true,
       required: true,
     },

@@ -1,14 +1,8 @@
-import jwt, { JwtPayload } from "jsonwebtoken";
+import jwt from "jsonwebtoken";
 import { Response } from "express";
 import dotenv from "dotenv";
-import User from "../models/user";
 import { DecodedUser, IUser } from "../types/global.types";
 import { logger } from "../utils/logger";
-
-interface TokenPayload extends JwtPayload {
-  Email: string;
-  Uid: string;
-}
 
 dotenv.config();
 
@@ -34,13 +28,9 @@ class JWTService {
     }
   }
 
-  async verifyRefreshToken(token: string): Promise<IUser | null> {
+  async verifyRefreshToken(token: string): Promise<DecodedUser | null> {
     try {
-      const decoded = jwt.verify(
-        token,
-        this.refreshTokenSecret,
-      ) as TokenPayload;
-      return await User.findOne({ Email: decoded.Email, _id: decoded.Uid });
+      return jwt.verify(token, this.refreshTokenSecret) as DecodedUser;
     } catch (error) {
       logger.error("Error verifying refresh token:", error);
       return null;
@@ -51,7 +41,7 @@ class JWTService {
     const token = jwt.sign(
       { Email: user.Email, Uid: user._id },
       this.accessTokenSecret,
-      { expiresIn: "15m" },
+      { expiresIn: "1d" },
     );
 
     return token;
@@ -61,7 +51,7 @@ class JWTService {
     const token = jwt.sign(
       { Email: user.Email, Uid: user._id },
       this.refreshTokenSecret,
-      { expiresIn: "7d" },
+      { expiresIn: "30d" },
     );
 
     return token;
@@ -72,7 +62,7 @@ class JWTService {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "strict",
-      maxAge: 15 * 60 * 1000, // 15 minutes
+      maxAge: 24 * 60 * 60 * 1000, // 24 hours
     });
   }
 
@@ -81,7 +71,7 @@ class JWTService {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "strict",
-      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+      maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
     });
   }
 

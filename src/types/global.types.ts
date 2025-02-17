@@ -22,10 +22,10 @@ export interface IUser extends Document {
   FirstName: string;
   MiddleName?: string;
   LastName: string;
-  Gender: "Male" | "Female" | "Other";
+  Gender?: "Male" | "Female" | "Other";
   DOB?: Date;
   Email: string;
-  PhoneNo: string;
+  PhoneNo: number;
   Password: string;
   RealPassword?: string;
   SubscriptionPlan?: ISubscriptionPlan;
