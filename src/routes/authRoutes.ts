@@ -285,20 +285,10 @@ authRouter.post("/logout", async (req: Request, res: Response) => {
 // Verify user using cookies
 authRouter.get(
   "/verify-user",
+  requiredLogin,
   async (req: Request, res: Response): Promise<void> => {
     try {
-      const cookies = req.cookies;
-      if (!cookies?.access_token) {
-        res.status(401).json({ error: "Access token required" });
-        return;
-      }
-
-      const user = await JWTService.verifyAccessToken(cookies.access_token);
-      if (!user) {
-        res.status(401).json({ error: "Invalid access token" });
-        return;
-      }
-
+      const user = req.user;
       res.status(200).json({ message: "User verified successfully", user });
     } catch (error) {
       logger.error("Verify user error:", error);

@@ -26,28 +26,28 @@ const requiredLogin = async (
       const decodedUser = await JWTService.verifyAccessToken(accessToken);
       if (decodedUser) {
         req.user = decodedUser;
-        return next();
+        next();
+        return;
       }
     }
     // Step 2: If Access Token is missing/invalid, check Refresh Token
     const refreshToken = req.cookies.refresh_token;
     if (!refreshToken) {
-      return res
-        .status(401)
-        .json({ error: "Unauthorized: No valid tokens found" });
+      res.status(401).json({ error: "Unauthorized: No valid tokens found" });
+      return;
     }
     // Step 3: Verify Refresh Token & Get User
     const refreshUser = await JWTService.verifyRefreshToken(refreshToken);
     if (!refreshUser) {
       JWTService.clearCookie(res, "refresh_token");
-      return res
-        .status(401)
-        .json({ error: "Unauthorized: Invalid refresh token" });
+      res.status(401).json({ error: "Unauthorized: Invalid refresh token" });
+      return;
     }
     const user = await User.findById(refreshUser.Uid);
     if (!user) {
       JWTService.clearCookie(res, "refresh_token");
-      return res.status(401).json({ error: "Unauthorized: User not found" });
+      res.status(401).json({ error: "Unauthorized: User not found" });
+      return;
     }
     // Step 4: Generate and Send New Access Token
     accessToken = JWTService.generateAccessToken(user);
